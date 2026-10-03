@@ -1,12 +1,13 @@
 import psutil
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from database import connect_db, close_db
+from jwt_auth import require_auth
 from services.face_service import load_model, is_model_loaded, _insightface_available
 from services.gemini_service import load_gemini
 from routers import (
@@ -19,6 +20,7 @@ from routers import (
     accounts,
     debts,
     proxy,
+    auth,
 )
 from models.schemas import HealthResponse
 from config import get_settings
@@ -62,9 +64,11 @@ async def log_requests(request, call_next):
     return response
 
 # Local-only routes (need direct MongoDB access for the Kolana ledger).
-app.include_router(transactions.router, prefix="/api/v1")
-app.include_router(accounts.router, prefix="/api/v1")
-app.include_router(debts.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
+_protected = [Depends(require_auth)]  # enforced only when AUTH_REQUIRED=true
+app.include_router(transactions.router, prefix="/api/v1", dependencies=_protected)
+app.include_router(accounts.router, prefix="/api/v1", dependencies=_protected)
+app.include_router(debts.router, prefix="/api/v1", dependencies=_protected)
 app.include_router(sol_price.router, prefix="/api/v1")
 
 _settings = get_settings()

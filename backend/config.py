@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     coingecko_api_url: str = "https://api.coingecko.com/api/v3"
     insightface_model: str = "buffalo_l"
     port: int = 8000
+    # JWT auth. Set JWT_SECRET to enable /auth/token; AUTH_REQUIRED=true enforces it.
+    jwt_secret: str = ""
+    jwt_expire_minutes: int = 60
+    auth_required: bool = False
     solana_rpc_url: str = "https://api.devnet.solana.com"
     solana_cluster: str = "devnet"
     # Upstream backend that has heavy deps (InsightFace, etc.).
